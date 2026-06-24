@@ -181,8 +181,13 @@
   .cbub.res{opacity:.62}
   .cbub.res p{text-decoration:line-through;text-decoration-color:rgba(0,0,0,.35)}
   .cbres{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:#0d6b00;background:#d6f5b0;border-radius:999px;padding:1px 6px;margin-left:4px}
-  .cbresbtn{margin-top:5px;font-size:11px;font-weight:600;color:var(--green-deep);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline}
-  .cbresbtn:hover{color:var(--ink)}
+  .cbacts{display:flex;gap:11px;margin-top:6px}
+  .cbresbtn,.cbeditbtn,.cbdelbtn{font-size:11px;font-weight:600;color:var(--green-deep);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline}
+  .cbresbtn:hover,.cbeditbtn:hover{color:var(--ink)}
+  .cbeditbtn{color:var(--sub)}
+  .cbdelbtn{color:#b23b3b}.cbdelbtn:hover{color:#7a1f1f}
+  .cbedited{font-size:9px;color:var(--sub);font-style:italic;margin-left:5px}
+  .cbeditarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:7px 9px;font:inherit;font-size:12.5px;resize:vertical;min-height:52px;display:block}
   .cbadd{border:1px dashed #cbd8b4;background:#fbfdf4;color:var(--green-deep);border-radius:12px;padding:9px 12px;font-size:12.5px;font-weight:600;cursor:pointer;text-align:left;width:100%}
   .cbadd:hover{background:#f2fbdf}
   .cbcompose{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:var(--sh)}
@@ -485,16 +490,22 @@ function setCm(t,a){try{localStorage.setItem(cmKey(t),JSON.stringify(a));}catch(
 function toggleResolved(t,idx){const a=getCm(t);if(!a[idx])return;a[idx].resolved=!a[idx].resolved;a[idx].resolvedTs=Date.now();setCm(t,a);
   if(FEEDBACK_ENDPOINT){try{fetch(FEEDBACK_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({type:"resolve",client:CLIENT,piece:t,resolved:a[idx].resolved,text:a[idx].text,ts:Date.now()})});}catch(e){}}}
 function bubbleHTML(c,idx){const pe=c.who!=="Client";const rs=!!c.resolved;
-  return `<div class="cbub ${pe?'pe':''} ${rs?'res':''}"><div class="cbubh"><div class="cbava ${pe?'pe':''}">${pe?'PE':clientInitial()}</div><span class="cbwho">${esc(c.who)}</span>${rs?'<span class="cbres">&#10003; Resolved</span>':''}<span class="cbtime">${timeAgo(c.ts)}</span></div><p>${esc(c.text)}</p><button type="button" class="cbresbtn" data-ri="${idx}">${rs?'Reopen':'Mark resolved'}</button></div>`;}
+  return `<div class="cbub ${pe?'pe':''} ${rs?'res':''}"><div class="cbubh"><div class="cbava ${pe?'pe':''}">${pe?'PE':clientInitial()}</div><span class="cbwho">${esc(c.who)}</span>${rs?'<span class="cbres">&#10003; Resolved</span>':''}${c.editedTs?'<span class="cbedited">edited</span>':''}<span class="cbtime">${timeAgo(c.ts)}</span></div><p>${esc(c.text)}</p><div class="cbacts"><button type="button" class="cbresbtn" data-ri="${idx}">${rs?'Reopen':'Resolve'}</button><button type="button" class="cbeditbtn" data-ri="${idx}">Edit</button><button type="button" class="cbdelbtn" data-ri="${idx}">Delete</button></div></div>`;}
+function editorHTML(c){return `<div class="cbub editing"><textarea class="cbeditarea">${esc(c.text)}</textarea><div class="cbrow"><button type="button" class="cbpost cbeditsave">Save</button><button type="button" class="cbcancel cbeditcancel">Cancel</button></div></div>`;}
 function renderSide(mount,t,theme){
   mount.innerHTML='<div class="apv"></div><div class="cmrail"></div>';
   renderApproval(mount.querySelector('.apv'),t,theme);
   renderRail(mount.querySelector('.cmrail'),t,theme);
 }
-function renderRail(rail,t,theme){
+function renderRail(rail,t,theme,editIdx){
   const list=getCm(t);
-  rail.innerHTML=list.map((c,i)=>bubbleHTML(c,i)).join('')+'<button type="button" class="cbadd">&#65291; Add a comment</button>';
+  rail.innerHTML=list.map((c,i)=> i===editIdx ? editorHTML(c) : bubbleHTML(c,i)).join('')+'<button type="button" class="cbadd">&#65291; Add a comment</button>';
   rail.querySelectorAll('.cbresbtn').forEach(b=>b.onclick=()=>{toggleResolved(t,+b.dataset.ri);renderRail(rail,t,theme);});
+  rail.querySelectorAll('.cbeditbtn').forEach(b=>b.onclick=()=>renderRail(rail,t,theme,+b.dataset.ri));
+  rail.querySelectorAll('.cbdelbtn').forEach(b=>b.onclick=()=>{if(confirm('Delete this comment?')){const a=getCm(t);a.splice(+b.dataset.ri,1);setCm(t,a);}renderRail(rail,t,theme);});
+  const ea=rail.querySelector('.cbeditarea');
+  if(ea){rail.querySelector('.cbeditsave').onclick=()=>{const v=ea.value.trim();if(v){const a=getCm(t);if(a[editIdx]){a[editIdx].text=v;a[editIdx].editedTs=Date.now();setCm(t,a);}}renderRail(rail,t,theme);};
+         rail.querySelector('.cbeditcancel').onclick=()=>renderRail(rail,t,theme);ea.focus();}
   rail.querySelector('.cbadd').onclick=()=>openCompose(rail,t,theme);
 }
 function openCompose(mount,t,theme){
