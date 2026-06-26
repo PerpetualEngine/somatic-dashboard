@@ -236,7 +236,7 @@
   .cmpost{margin-top:8px;border:none;background:var(--ink-d);color:#fff;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer}
   .txcm{margin-top:10px}
   .txtoggle{margin-top:10px;font-size:12.5px;font-weight:600;color:var(--green-deep);background:none;border:none;cursor:pointer;padding:0}
-.wabtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:11px 14px;border-radius:12px;text-decoration:none;margin:2px 0 14px}.wabtn:hover{background:#1ebe57}.wafab{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;align-items:center;gap:9px;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:13px 18px;border-radius:999px;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.25)}.wafab:hover{background:#1ebe57}</style>
+.wabtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:11px 14px;border-radius:12px;text-decoration:none;margin:2px 0 14px}.wabtn:hover{background:#1ebe57}.wafab{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;align-items:center;gap:9px;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:13px 18px;border-radius:999px;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.25)}.wafab:hover{background:#1ebe57}.wafb{background:#e7f9ec;border:1px solid #bfe8cb;border-radius:12px;padding:12px 14px;margin-bottom:14px}.wafbhd{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#0d7a35;margin-bottom:7px}.wafbdec{display:inline-block;font-size:12.5px;font-weight:700;color:#fff;padding:3px 10px;border-radius:7px;margin-bottom:6px}.wafbdec.ok{background:#16a34a}.wafbdec.ch{background:#e3a83c}.wafbcm{font-size:14px;color:#22332e;line-height:1.5;font-style:italic;margin:0}.wabadge{position:absolute;left:7px;top:7px;font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;z-index:2;box-shadow:0 1px 4px rgba(0,0,0,.3)}</style>
 </head>
 <body>
 <header><div class="wrap bar">
@@ -294,6 +294,15 @@ const A="dashboard_assets/";
 const CLIENT="Somatic Institute for Women";
 const FB_EMAIL="eric@perpetualnurture.com";
 const WHATSAPP_NUMBER="66945854976";
+var WA_FEEDBACK = {
+ "The Anchor and the Felt Sense":{decision:"approve",comment:"Love this 🌿 the beach version is perfect",by:"Maanee",ts:Date.now()-5400000},
+ "Sensuality Is Your Birthright":{decision:"change",comment:"Can we try the daisies background instead of the sea?",by:"Maanee",ts:Date.now()-2400000},
+ "It's Not Even You: The History of Misogyny":{decision:"approve",comment:"Yes — this nails it 💛",by:"Maanee",ts:Date.now()-600000}
+};
+function waOf(d){return WA_FEEDBACK[d.t]||null;}
+function waBadge(d){var w=waOf(d);if(!w)return '';return '<div class="wabadge" style="background:'+(w.decision==='approve'?'#16a34a':'#e3a83c')+'">📲</div>';}
+function waBlock(d){var w=waOf(d);if(!w)return '';var ok=w.decision==='approve';return '<div class="wafb"><div class="wafbhd">📲 From WhatsApp · '+esc(w.by||'Client')+(w.ts?(' · '+timeAgo(w.ts)):'')+'</div>'+(w.decision?('<div class="wafbdec '+(ok?'ok':'ch')+'">'+(ok?'✅ Approved':'✎ Change requested')+'</div>'):'')+(w.comment?('<p class="wafbcm">“'+esc(w.comment)+'”</p>'):'')+'</div>';}
+function fetchWA(){if(!FEEDBACK_ENDPOINT)return;try{fetch(FEEDBACK_ENDPOINT+'?action=list&client='+encodeURIComponent(CLIENT)).then(function(r){return r.json();}).then(function(rows){(rows||[]).forEach(function(x){if(x&&x.piece)WA_FEEDBACK[x.piece]={decision:x.decision,comment:x.comment,by:x.by||'Maanee',ts:x.ts};});if(typeof renderBoard==='function')renderBoard();}).catch(function(){});}catch(e){}}
 // Comments: persist locally; when FEEDBACK_ENDPOINT (an Apps Script web-app URL) is set, each
 // comment also POSTs there so the team is emailed + it logs to a Sheet (cross-device sync).
 const FEEDBACK_ENDPOINT="";
@@ -402,7 +411,7 @@ function renderBoard(){
     col.innerHTML=`<div class="colh"><span class="cdot"></span><span class="cname">${c.n}</span><span class="cct">${items.length}</span></div>`;
     items.forEach(d=>{const card=document.createElement('div');card.className='card';
       const _f=getFb(d);const _b=_f?`<div class="cardfb" style="background:${_f.decision==='approve'?'#16a34a':'#e3a83c'}">${_f.decision==='approve'?'\u2713':'\u270e'}${_f.by?(' '+_f.by):''}</div>`:'';
-      card.innerHTML=`${cover(d)}${_b}<div class="cbody"><div class="ct">${d.t}</div><div class="cm"><span>${d.theme}</span><span>${dateLabel(d)}</span></div></div>`;
+      card.innerHTML=`${cover(d)}${_b}${waBadge(d)}<div class="cbody"><div class="ct">${d.t}</div><div class="cm"><span>${d.theme}</span><span>${dateLabel(d)}</span></div></div>`;
       card.onclick=()=>openModal(d);col.appendChild(card);});
     board.appendChild(col);});
 }
@@ -578,7 +587,7 @@ function openModal(d){
   else if(d.body)mbody.innerHTML=d.body;
   else mbody.innerHTML=`<div style="padding:36px 24px;text-align:center;color:var(--sub)"><div style="font-weight:600;color:var(--ink)">In production</div>${d.script?'<p style="margin-top:12px;font-family:Georgia,serif;font-size:14.5px;line-height:1.6;color:#3a3a36;text-align:left">'+d.script+'</p>':'<div style="margin-top:8px">This piece is being prepared. See the Transcripts tab for the full script.</div>'}</div>`;
   const mf=document.getElementById("mfeedback");
-  mf.innerHTML='<h4 class="fbh">Approval &amp; comments</h4>'+(WHATSAPP_NUMBER?('<a class="wabtn" target="_blank" rel="noopener" href="https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent('Feedback on \u201c'+d.t+'\u201d ('+d.fmt+'): ')+'">\uD83D\uDCAC Feedback on WhatsApp</a>'):'')+'<div class="apv" id="mapv"></div><div class="cmrail" id="mcm" style="margin-top:13px"></div>';
+  mf.innerHTML=waBlock(d)+'<h4 class="fbh">Approval &amp; comments</h4>'+(WHATSAPP_NUMBER?('<a class="wabtn" target="_blank" rel="noopener" href="https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent('Feedback on \u201c'+d.t+'\u201d ('+d.fmt+'): ')+'">\uD83D\uDCAC Feedback on WhatsApp</a>'):'')+'<div class="apv" id="mapv"></div><div class="cmrail" id="mcm" style="margin-top:13px"></div>';
   renderApproval(document.getElementById("mapv"),d.t,d.theme);
   renderRail(document.getElementById("mcm"),d.t,d.theme);
   ovl.classList.add('open');
@@ -589,7 +598,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 renderBoard();
 const VIEWS=['board','calendar','library','reports','transcripts'];
 const initial=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):'board';
-setView(initial);
+setView(initial);fetchWA();
 window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(VIEWS.includes(h))setView(h);});
 document.getElementById('topnav').addEventListener('click',e=>{const a=e.target.closest('a');if(a&&a.dataset.v)location.hash=a.dataset.v;});
 </script>
