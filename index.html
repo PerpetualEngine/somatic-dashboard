@@ -236,7 +236,7 @@
   .cmpost{margin-top:8px;border:none;background:var(--ink-d);color:#fff;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer}
   .txcm{margin-top:10px}
   .txtoggle{margin-top:10px;font-size:12.5px;font-weight:600;color:var(--green-deep);background:none;border:none;cursor:pointer;padding:0}
-</style>
+.wabtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:11px 14px;border-radius:12px;text-decoration:none;margin:2px 0 14px}.wabtn:hover{background:#1ebe57}.wafab{position:fixed;right:18px;bottom:18px;z-index:9999;display:flex;align-items:center;gap:9px;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:13px 18px;border-radius:999px;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.25)}.wafab:hover{background:#1ebe57}</style>
 </head>
 <body>
 <header><div class="wrap bar">
@@ -293,6 +293,7 @@
 const A="dashboard_assets/";
 const CLIENT="Somatic Institute for Women";
 const FB_EMAIL="eric@perpetualnurture.com";
+const WHATSAPP_NUMBER="66945854976";
 // Comments: persist locally; when FEEDBACK_ENDPOINT (an Apps Script web-app URL) is set, each
 // comment also POSTs there so the team is emailed + it logs to a Sheet (cross-device sync).
 const FEEDBACK_ENDPOINT="";
@@ -577,7 +578,7 @@ function openModal(d){
   else if(d.body)mbody.innerHTML=d.body;
   else mbody.innerHTML=`<div style="padding:36px 24px;text-align:center;color:var(--sub)"><div style="font-weight:600;color:var(--ink)">In production</div>${d.script?'<p style="margin-top:12px;font-family:Georgia,serif;font-size:14.5px;line-height:1.6;color:#3a3a36;text-align:left">'+d.script+'</p>':'<div style="margin-top:8px">This piece is being prepared. See the Transcripts tab for the full script.</div>'}</div>`;
   const mf=document.getElementById("mfeedback");
-  mf.innerHTML='<h4 class="fbh">Approval &amp; comments</h4><div class="apv" id="mapv"></div><div class="cmrail" id="mcm" style="margin-top:13px"></div>';
+  mf.innerHTML='<h4 class="fbh">Approval &amp; comments</h4>'+(WHATSAPP_NUMBER?('<a class="wabtn" target="_blank" rel="noopener" href="https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent('Feedback on \u201c'+d.t+'\u201d ('+d.fmt+'): ')+'">\uD83D\uDCAC Feedback on WhatsApp</a>'):'')+'<div class="apv" id="mapv"></div><div class="cmrail" id="mcm" style="margin-top:13px"></div>';
   renderApproval(document.getElementById("mapv"),d.t,d.theme);
   renderRail(document.getElementById("mcm"),d.t,d.theme);
   ovl.classList.add('open');
@@ -596,5 +597,6 @@ document.getElementById('topnav').addEventListener('click',e=>{const a=e.target.
   <input type="text" name="client"><input type="text" name="piece"><input type="text" name="theme">
   <input type="text" name="decision"><textarea name="comment"></textarea><input type="text" name="bot-field">
 </form>
+<a class="wafab" target="_blank" rel="noopener" href="https://wa.me/66945854976?text=Feedback%20on%20the%20Somatic%20Institute%20content%3A%20">💬 Feedback on WhatsApp</a>
 </body>
 </html>
