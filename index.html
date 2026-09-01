@@ -352,12 +352,14 @@ function effStatusT(t){try{return localStorage.getItem("st:"+CLIENT+":"+t)||defa
 function decide(t,theme,decision,by){const st=effStatusT(t);let next;if(decision==='approve'){next=(st==='ready')?'scheduled':'production';}else{next='drafting';}const prev=getFbT(t)||{};setFbT(t,{decision:decision,by:by,ts:Date.now(),stage:(st==='ready'?'final':'plan'),comment:prev.comment||""});setStatusT(t,next);
   if(FEEDBACK_ENDPOINT){try{fetch(FEEDBACK_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({type:"approval",client:CLIENT,piece:t,theme:theme||"",decision:decision,by:by,from:st,to:next,ts:Date.now()})});}catch(e){}}}
 function refreshBoards(){if(typeof renderStats==='function')renderStats();if(typeof renderBoard==='function')renderBoard();if(typeof view!=='undefined'){if(view==="calendar")renderCal();if(view==="reports")renderReports();}}
-const STAGES=['drafting','production','ready','scheduled','published'];
+const STAGES=['pitch','drafting','production','ready','scheduled','published'];
 const STAGELBL={pitch:'Topic idea',drafting:'Drafting',production:'In production',ready:"Waiting for Maanee's approval",scheduled:'Scheduled',published:'Published'};
 function revert(t){const cur=effStatusT(t),i=STAGES.indexOf(cur);if(i<=0)return;const prev=STAGES[i-1];setStatusT(t,prev);if(prev==='drafting'||prev==='ready'){try{localStorage.removeItem("fb:"+CLIENT+":"+t);}catch(e){}}}
 function renderApproval(mount,t,theme){
   const st=effStatusT(t),fb=getFbT(t)||{};
-  if(st==='drafting'){renderApprovalControls(mount,t,theme,'Approve the plan to start clip-making');}
+  if(st==='pitch'){mount.innerHTML='<button type="button" class="pickbtn" style="max-width:340px">\u2713 Develop this one</button><span class="apvsub">Tick it and Perpetual Engine builds the clip. Approval comes later, on the finished visual.</span>';
+    const _p=mount.querySelector('.pickbtn');_p.onclick=()=>{_p.textContent='\u2713 Picked!';_p.disabled=true;const d=DATA.find(x=>x.t===t);pickTopic(d||{t:t});renderApproval(mount,t,theme);refreshBoards();};}
+  else if(st==='drafting'){mount.innerHTML='<span class="apvtag prod">\u270d Picked \u00b7 being developed</span><span class="apvsub">Leave a comment below to steer it. You approve the finished visual in Step 3.</span>';}
   else if(st==='production'){mount.innerHTML='<span class="apvtag prod">&#128736; In production</span>'+(fb.by?('<span class="apvsub">plan approved &middot; '+esc(fb.by)+'</span>'):'');}
   else if(st==='ready'){renderApprovalControls(mount,t,theme,'Approve this clip to schedule it');}
   else if(st==='scheduled'){mount.innerHTML='<span class="apvtag ok">&#10003; Approved'+(fb.by?(' &middot; '+esc(fb.by)):'')+'</span><span class="apvsub">scheduled to post</span>';}
