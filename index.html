@@ -254,6 +254,7 @@
 .cblurb{font-size:13.5px;color:#5b5b56;line-height:1.5;margin:7px 0 9px}
 .pickbtn{display:block;width:100%;margin-top:10px;padding:9px 0;border:0;border-radius:9px;background:#c9f57e;color:#173300;font-weight:700;font-size:13.5px;cursor:pointer}
 .pickbtn:hover{background:#b8ec62}.pickbtn:disabled{background:#e5efd2;color:#6a7a52;cursor:default}
+.bledit{display:inline-block;margin:2px 0 10px;border:0;background:none;color:#2f6b00;text-decoration:underline;cursor:pointer;font-size:13px}
 </style>
 </head>
 <body>
@@ -335,7 +336,8 @@ function timeAgo(ts){const s=Math.floor((Date.now()-ts)/1000);if(s<60)return"jus
 function postComment(t,theme,who,text){const a=getCm(t);const c={who:who,text:text,ts:Date.now()};a.push(c);try{localStorage.setItem(cmKey(t),JSON.stringify(a));}catch(e){}
   if(FEEDBACK_ENDPOINT){try{fetch(FEEDBACK_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({type:"comment",client:CLIENT,piece:t,theme:theme||"",who:who,text:text,ts:c.ts})});}catch(e){}}
   return a;}
-function commentCount(t){return getCm(t).length;}
+function commentCount(t){return getCm(t).filter(c=>!/^BLURB:/.test(c.text)).length;}
+function blurbOf(d){const list=getCm(d.t).filter(c=>/^BLURB:/.test(c.text));return list.length?list[list.length-1].text.replace(/^BLURB:\s*/,''):(d.b||'');}
 // title-keyed feedback/status so the Transcripts view (which only knows the title) shares state with the board
 function getFbT(t){try{return JSON.parse(localStorage.getItem("fb:"+CLIENT+":"+t)||"null");}catch(e){return null;}}
 function setFbT(t,v){try{localStorage.setItem("fb:"+CLIENT+":"+t,JSON.stringify(v));}catch(e){}}
@@ -357,8 +359,13 @@ const STAGELBL={pitch:'Topic idea',drafting:'Drafting',production:'In production
 function revert(t){const cur=effStatusT(t),i=STAGES.indexOf(cur);if(i<=0)return;const prev=STAGES[i-1];setStatusT(t,prev);if(prev==='drafting'||prev==='ready'){try{localStorage.removeItem("fb:"+CLIENT+":"+t);}catch(e){}}}
 function renderApproval(mount,t,theme){
   const st=effStatusT(t),fb=getFbT(t)||{};
-  if(st==='pitch'){mount.innerHTML='<button type="button" class="pickbtn" style="max-width:340px">\u2713 Develop this one</button><span class="apvsub">Tick it and Perpetual Engine builds the clip. Approval comes later, on the finished visual.</span>';
-    const _p=mount.querySelector('.pickbtn');_p.onclick=()=>{_p.textContent='\u2713 Picked!';_p.disabled=true;const d=DATA.find(x=>x.t===t);pickTopic(d||{t:t});renderApproval(mount,t,theme);refreshBoards();};}
+  if(st==='pitch'){const _d=DATA.find(x=>x.t===t)||{t:t};const _bl=blurbOf(_d);
+    mount.innerHTML='<div class="cblurb" style="font-size:14.5px;max-width:560px">'+esc(_bl)+'</div>'+(OWNER?'<button type="button" class="bledit">\u270e Edit blurb</button>':'')+'<button type="button" class="pickbtn" style="max-width:340px">\u2713 Develop this one</button><span class="apvsub">Tick it and Perpetual Engine builds the clip. Approval comes later, on the finished visual.</span>';
+    const _p=mount.querySelector('.pickbtn');_p.onclick=()=>{_p.textContent='\u2713 Picked!';_p.disabled=true;pickTopic(_d);renderApproval(mount,t,theme);refreshBoards();};
+    const _e=mount.querySelector('.bledit');if(_e)_e.onclick=()=>{
+      mount.innerHTML='<textarea class="blta" style="width:100%;max-width:560px;min-height:84px;font:inherit;font-size:14px;padding:10px;border-radius:10px;border:1px solid #cfd6c4">'+esc(_bl)+'</textarea><div style="margin-top:8px"><button type="button" class="blsave pickbtn" style="display:inline-block;width:auto;padding:9px 22px">Save blurb</button> <button type="button" class="blcancel" style="border:0;background:none;text-decoration:underline;cursor:pointer">Cancel</button></div>';
+      mount.querySelector('.blsave').onclick=()=>{const v=mount.querySelector('.blta').value.trim();if(v){postComment(t,theme,'Perpetual Engine','BLURB: '+v);}renderApproval(mount,t,theme);refreshBoards();};
+      mount.querySelector('.blcancel').onclick=()=>renderApproval(mount,t,theme);};}
   else if(st==='drafting'){mount.innerHTML='<span class="apvtag prod">\u270d Picked \u00b7 being developed</span><span class="apvsub">Leave a comment below to steer it. You approve the finished visual in Step 3.</span>';}
   else if(st==='production'){mount.innerHTML='<span class="apvtag prod">&#128736; In production</span>'+(fb.by?('<span class="apvsub">plan approved &middot; '+esc(fb.by)+'</span>'):'');}
   else if(st==='ready'){renderApprovalControls(mount,t,theme,'Approve this clip to schedule it');}
@@ -377,7 +384,7 @@ function renderApprovalControls(mount,t,theme,label){
   mount.querySelector('.apvch').onclick=()=>{decide(t,theme,'change',by);renderApproval(mount,t,theme);refreshBoards();};
 }
 function renderComments(mount,t,theme){
-  const list=getCm(t);
+  const list=getCm(t).filter(c=>!/^BLURB:/.test(c.text));
   mount.innerHTML='<div class="cmhd">Comments'+(list.length?(' <span>'+list.length+'</span>'):'')+'</div>'+
    '<div class="cmlist">'+(list.length?list.map(c=>'<div class="cmrow '+(c.who==="Client"?"cl":"pe")+'"><div class="cmmeta"><b>'+esc(c.who)+'</b><span>'+timeAgo(c.ts)+'</span></div><p>'+esc(c.text)+'</p></div>').join(''):'<div class="cmempty">No comments yet. Start the conversation.</div>')+'</div>'+
    '<div class="cmwho"><button type="button" data-w="Client" class="on">Client</button><button type="button" data-w="Perpetual Engine">Perpetual Engine</button></div>'+
@@ -434,7 +441,7 @@ function renderBoard(){
       const _ed=_canEdit?'<button type="button" class="cardedit">&#9998; Edit video</button>':'';
       if(c.k==='pitch'){
         card.classList.add('pitchcard');
-        card.innerHTML=`${_cb}<div class="cbody"><div class="ct">${d.t}</div>${d.b?`<div class="cblurb">${d.b}</div>`:``}<div class="cm"><span>${d.theme}</span></div>${d.mother?`<div class="cmmom">from ${d.mother}</div>`:``}<button type="button" class="pickbtn">\u2713 Develop this one</button></div>`;
+        card.innerHTML=`${_cb}<div class="cbody"><div class="ct">${d.t}</div>${blurbOf(d)?`<div class="cblurb">${blurbOf(d)}</div>`:``}<div class="cm"><span>${d.theme}</span></div>${d.mother?`<div class="cmmom">from ${d.mother}</div>`:``}<button type="button" class="pickbtn">\u2713 Develop this one</button></div>`;
       } else {
       card.innerHTML=`${cover(d)}${_b}${_cb}<div class="cbody"><div class="ct">${d.t}</div><div class="cm"><span>${d.theme}</span><span>${dateLabel(d)}</span></div>${d.mother?`<div class="cmmom">from ${d.mother}</div>`:``}${_ed}</div>`;
       }
