@@ -441,7 +441,7 @@ function renderBoard(){
       const _ed=_canEdit?'<button type="button" class="cardedit">&#9998; Edit video</button>':'';
       if(c.k==='pitch'){
         card.classList.add('pitchcard');
-        card.innerHTML=`${_cb}<div class="cbody"><div class="ct">${d.t}</div>${blurbOf(d)?`<div class="cblurb">${blurbOf(d)}</div>`:``}<div class="cm"><span>${d.theme}</span></div>${d.mother?`<div class="cmmom">from ${d.mother}</div>`:``}<button type="button" class="pickbtn">\u2713 Develop this one</button></div>`;
+        card.innerHTML=`${_cb}<div class="cbody"><div class="ct">${d.t}</div>${blurbOf(d)?`<div class="cblurb">${blurbOf(d)}</div>`:``}<div class="cm"><span>${d.theme}</span></div>${d.mother?`<div class="cmmom">from ${d.mother}</div>`:``}${_ed}<button type="button" class="pickbtn">\u2713 Develop this one</button></div>`;
       } else {
       card.innerHTML=`${cover(d)}${_b}${_cb}<div class="cbody"><div class="ct">${d.t}</div><div class="cm"><span>${d.theme}</span><span>${dateLabel(d)}</span></div>${d.mother?`<div class="cmmom">from ${d.mother}</div>`:``}${_ed}</div>`;
       }
