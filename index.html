@@ -370,7 +370,7 @@ function renderApproval(mount,t,theme){
       mount.querySelector('.blsave').onclick=()=>{const v=mount.querySelector('.blta').value.trim();if(v){postComment(t,theme,'Perpetual Engine','BLURB: '+v);}renderApproval(mount,t,theme);refreshBoards();};
       mount.querySelector('.blcancel').onclick=()=>renderApproval(mount,t,theme);};}
   else if(st==='drafting'){renderApprovalControls(mount,t,theme,'<span class="apvtag prod">\u270d Picked \u00b7 being developed</span>');}
-  else if(st==='production'){renderApprovalControls(mount,t,theme,'<span class="apvtag prod">&#128736; In production</span>'+(fb.by?('<span class="apvsub">plan approved &middot; '+esc(fb.by)+'</span>'):''));}
+  else if(st==='production'){renderApprovalControls(mount,t,theme,'<span class="apvtag prod">&#128736; In production</span>'+(fb.by?('<span class="apvsub">plan approved &middot; '+esc(fb.by)+'</span>'):'')+'<span class="apvsub">Nothing to approve yet &mdash; comment or send back if something needs to change before it’s finished.</span>',true);}
   else if(st==='ready'){renderApprovalControls(mount,t,theme,'Approve this clip to schedule it');}
   else if(st==='scheduled'){renderApprovalControls(mount,t,theme,'<span class="apvtag ok">&#10003; Approved'+(fb.by?(' &middot; '+esc(fb.by)):'')+'</span><span class="apvsub">scheduled to post</span>',true);}
   else if(st==='published'){renderApprovalControls(mount,t,theme,'<span class="apvtag ok">&#10003; Published</span>',true);}
