@@ -354,8 +354,8 @@ if(/[{}]/.test(CLIENT_INITIALS)||!CLIENT_INITIALS){CLIENT_INITIALS=((CLIENT||'C'
 function defaultStatus(t){for(var i=0;i<DATA.length;i++){if(DATA[i].t===t)return DATA[i].s;}return 'drafting';}
 function effStatusT(t){try{return localStorage.getItem("st:"+CLIENT+":"+t)||defaultStatus(t);}catch(e){return defaultStatus(t);}}
 // Approve always advances one stage forward (drafting->production, production->ready, ready->scheduled, scheduled->published).
-// Send back to production always returns to drafting, regardless of where it was sent back from.
-function decide(t,theme,decision,by){const st=effStatusT(t);let next;if(decision==='approve'){const i=STAGES.indexOf(st);next=(i>=0&&i<STAGES.length-1)?STAGES[i+1]:st;}else{next='drafting';}const prev=getFbT(t)||{};setFbT(t,{decision:decision,by:by,ts:Date.now(),stage:(st==='ready'?'final':'plan'),comment:prev.comment||""});setStatusT(t,next);
+// Send back always moves one stage backward (ready->production, production->drafting), so it too always visibly moves the card.
+function decide(t,theme,decision,by){const st=effStatusT(t);const i=STAGES.indexOf(st);let next;if(decision==='approve'){next=(i>=0&&i<STAGES.length-1)?STAGES[i+1]:st;}else{next=(i>0)?STAGES[i-1]:st;}const prev=getFbT(t)||{};setFbT(t,{decision:decision,by:by,ts:Date.now(),stage:(st==='ready'?'final':'plan'),comment:prev.comment||""});setStatusT(t,next);
   if(FEEDBACK_ENDPOINT){try{fetch(FEEDBACK_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({type:"approval",client:CLIENT,piece:t,theme:theme||"",decision:decision,by:by,from:st,to:next,ts:Date.now()})});}catch(e){}}}
 function refreshBoards(){if(typeof renderStats==='function')renderStats();if(typeof renderBoard==='function')renderBoard();if(typeof view!=='undefined'){if(view==="calendar")renderCal();if(view==="reports")renderReports();}}
 const STAGES=['pitch','drafting','production','ready','scheduled','published'];
