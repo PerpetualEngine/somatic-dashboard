@@ -353,8 +353,9 @@ let CLIENT_INITIALS="SIFW";
 if(/[{}]/.test(CLIENT_INITIALS)||!CLIENT_INITIALS){CLIENT_INITIALS=((CLIENT||'C').split(/\s+/).map(w=>w[0]).filter(c=>/[A-Za-z]/.test(c)).join('').toUpperCase().slice(0,4))||'C';}
 function defaultStatus(t){for(var i=0;i<DATA.length;i++){if(DATA[i].t===t)return DATA[i].s;}return 'drafting';}
 function effStatusT(t){try{return localStorage.getItem("st:"+CLIENT+":"+t)||defaultStatus(t);}catch(e){return defaultStatus(t);}}
-// stage-aware: approving a DRAFT plan -> production (we make the clip); approving a FINISHED clip (ready) -> scheduled
-function decide(t,theme,decision,by){const st=effStatusT(t);let next;if(decision==='approve'){next=(st==='ready')?'scheduled':'production';}else{next='drafting';}const prev=getFbT(t)||{};setFbT(t,{decision:decision,by:by,ts:Date.now(),stage:(st==='ready'?'final':'plan'),comment:prev.comment||""});setStatusT(t,next);
+// Approve always advances one stage forward (drafting->production, production->ready, ready->scheduled, scheduled->published).
+// Send back to production always returns to drafting, regardless of where it was sent back from.
+function decide(t,theme,decision,by){const st=effStatusT(t);let next;if(decision==='approve'){const i=STAGES.indexOf(st);next=(i>=0&&i<STAGES.length-1)?STAGES[i+1]:st;}else{next='drafting';}const prev=getFbT(t)||{};setFbT(t,{decision:decision,by:by,ts:Date.now(),stage:(st==='ready'?'final':'plan'),comment:prev.comment||""});setStatusT(t,next);
   if(FEEDBACK_ENDPOINT){try{fetch(FEEDBACK_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({type:"approval",client:CLIENT,piece:t,theme:theme||"",decision:decision,by:by,from:st,to:next,ts:Date.now()})});}catch(e){}}}
 function refreshBoards(){if(typeof renderStats==='function')renderStats();if(typeof renderBoard==='function')renderBoard();if(typeof view!=='undefined'){if(view==="calendar")renderCal();if(view==="reports")renderReports();}}
 const STAGES=['pitch','drafting','production','ready','scheduled','published'];
@@ -370,7 +371,7 @@ function renderApproval(mount,t,theme){
       mount.querySelector('.blsave').onclick=()=>{const v=mount.querySelector('.blta').value.trim();if(v){postComment(t,theme,'Perpetual Engine','BLURB: '+v);}renderApproval(mount,t,theme);refreshBoards();};
       mount.querySelector('.blcancel').onclick=()=>renderApproval(mount,t,theme);};}
   else if(st==='drafting'){renderApprovalControls(mount,t,theme,'<span class="apvtag prod">\u270d Picked \u00b7 being developed</span>');}
-  else if(st==='production'){renderApprovalControls(mount,t,theme,'<span class="apvtag prod">&#128736; In production</span>'+(fb.by?('<span class="apvsub">plan approved &middot; '+esc(fb.by)+'</span>'):'')+'<span class="apvsub">Nothing to approve yet &mdash; comment or send back if something needs to change before it’s finished.</span>',true);}
+  else if(st==='production'){renderApprovalControls(mount,t,theme,'<span class="apvtag prod">&#128736; In production</span>'+(fb.by?('<span class="apvsub">plan approved &middot; '+esc(fb.by)+'</span>'):'')+'<span class="apvsub">Approve once it looks finished, or send back with a comment.</span>');}
   else if(st==='ready'){renderApprovalControls(mount,t,theme,'Approve this clip to schedule it');}
   else if(st==='scheduled'){renderApprovalControls(mount,t,theme,'<span class="apvtag ok">&#10003; Approved'+(fb.by?(' &middot; '+esc(fb.by)):'')+'</span><span class="apvsub">scheduled to post</span>',true);}
   else if(st==='published'){renderApprovalControls(mount,t,theme,'<span class="apvtag ok">&#10003; Published</span>',true);}
